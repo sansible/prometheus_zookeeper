@@ -1,0 +1,73 @@
+---
+
+- name: Create Prometheus Zookeeper Exporter directories
+  become: yes
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ sansible_prometheus_zookeeper_exporter.user }}"
+    group: "{{ sansible_prometheus_zookeeper_exporter.group }}"
+    mode: 0750
+  with_items:
+    - "{{ sansible_prometheus_zookeeper_exporter.path.install }}"
+    - "{{ sansible_prometheus_zookeeper_exporter.path.install }}/bin"
+    - "{{ sansible_prometheus_zookeeper_exporter.path.log }}"
+    - "{{ sansible_prometheus_zookeeper_exporter.path.pid }}"
+
+- name: Copy wrapper shell script
+  become: yes
+  copy:
+    src: prometheus_wrapper
+    dest: "{{ sansible_prometheus_zookeeper_exporter.path.install }}/bin/prometheus_wrapper"
+    owner: "{{ sansible_prometheus_zookeeper_exporter.user }}"
+    group: "{{ sansible_prometheus_zookeeper_exporter.group }}"
+    mode: 0755
+
+- name: Stat download tarball
+  stat:
+    path: "{{ sansible_prometheus_zookeeper_exporter.download_dest }}/{{ sansible_prometheus_zookeeper_exporter.download_url.split('/')[-1] }}"
+  register: download_tar
+
+- name: Download Prometheus Zookeeper Exporter tarball
+  become: yes
+  get_url:
+    url: "{{ sansible_prometheus_zookeeper_exporter.download_url }}"
+    dest: "{{ sansible_prometheus_zookeeper_exporter.download_dest }}"
+    checksum: "{{ sansible_prometheus_zookeeper_exporter.checksum }}"
+  when: download_tar.stat.exists == False
+
+- name: Untar Prometheus Zookeeper Exporter tarball
+  become: yes
+  unarchive:
+    src: "{{ sansible_prometheus_zookeeper_exporter.download_dest }}/{{ sansible_prometheus_zookeeper_exporter.download_url.split('/')[-1] }}"
+    dest: "{{ sansible_prometheus_zookeeper_exporter.path.install }}"
+    owner: "{{ sansible_prometheus_zookeeper_exporter.user }}"
+    group: "{{ sansible_prometheus_zookeeper_exporter.user }}"
+    remote_src: True
+  when: download_tar.stat.exists == False
+
+- name: Ensure Prometheus Zookeeper Exporter directory does not exist
+  become: yes
+  file:
+    path: "{{ sansible_prometheus_zookeeper_exporter.path.install }}/sansible_prometheus_zookeeper_exporter/"
+    state: absent
+  when: download_tar.stat.exists == False
+
+- name: Move Prometheus Zookeeper Exporter directory to destination
+  become: yes
+  become_user: "{{ sansible_prometheus_zookeeper_exporter.user }}"
+  command: "mv {{ sansible_prometheus_zookeeper_exporter.path.install }}/{{ sansible_prometheus_zookeeper_exporter.download_url.split('/')[-1].rsplit('.',2)[0] }} {{ sansible_prometheus_zookeeper_exporter.path.install }}/prometheus_zookeeper_exporter"
+  when: download_tar.stat.exists == False
+
+- name: Make Prometheus Zookeeper Exporter a service
+  become: yes
+  template:
+    dest: /etc/init.d/prometheus-zookeeper-exporter
+    mode: 0775
+    src: prometheus_zookeeper_exporter.sysvinit.j2
+
+- name: Enable Prometheus Zookeeper Exporter service
+  become: yes
+  service:
+    name: prometheus-zookeeper-exporter
+    enabled: "{{ sansible_prometheus_zookeeper_exporter.start_on_boot }}"

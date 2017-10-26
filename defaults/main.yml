@@ -1,0 +1,14 @@
+---
+
+sansible_prometheus_zookeeper_exporter:
+  checksum: sha256:c5522a029bd21be7021a5aa42d48cbd541975b641b9bba8315ce9c769051f91e
+  download_dest: "/tmp"
+  download_url: "https://github.com/carlpett/zookeeper_exporter/releases/download/v1.0.1/zookeeper_exporter-1.0.1.linux-amd64.tar.gz"
+  group: prometheus
+  opts: ~
+  path:
+    install: /home/prometheus
+    log: /var/log/prometheus
+    pid: /var/run/prometheus
+  start_on_boot: no
+  user: prometheus

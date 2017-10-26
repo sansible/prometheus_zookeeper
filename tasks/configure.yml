@@ -1,0 +1,8 @@
+---
+
+- name: Prometheus Zookeeper Exporter service start
+  become: yes
+  service:
+    name: prometheus-zookeeper-exporter
+    state: started
+  when: sansible_prometheus_zookeeper_exporter.start_on_boot

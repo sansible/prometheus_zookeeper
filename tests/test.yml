@@ -1,0 +1,29 @@
+---
+
+- name: Test Prometheus Zookeeper Exporter role
+  hosts: all
+
+  pre_tasks:
+    - name: Update apt
+      become: yes
+      apt:
+        cache_valid_time: 1800
+        update_cache: yes
+      tags:
+        - build
+
+  roles:
+    - role: sansible.prometheus_zookeeper_exporter
+      sansible_prometheus_zookeeper_exporter:
+        start_on_boot: yes
+
+  post_tasks:
+    - name: Ensure Prometheus Zookeeper Exporter service is already started.
+      become: yes
+      service:
+        name: prometheus-zookeeper-exporter
+        state: started
+      failed_when: status_check.changed
+      register: status_check
+      tags:
+        - assert
